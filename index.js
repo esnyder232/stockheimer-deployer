@@ -1,6 +1,6 @@
+const process = require('child_process');
+const {config} = require('./config.js');
 const {Logger} = require('./logger.js');
-const {script1} = require('./script1.js');
-
 
 try {
 	//create log
@@ -8,24 +8,68 @@ try {
 
 	log.log("=== stockheimer-deployer start ===");
 
-	script1();
-
+	copyStagingToDeploy();	
+	runNpmInstall();
+	modifyClientFiles();
+	createBundles();
+	createHashNumber();
+	renameBundlesWithHash();
+	modifyIndexHtml();
 }
 catch(ex) {
-	if(log.isInitialized()){
-		log.log(ex.stack);
-	}
-	else //atleast console log it
-	{
-		console.log(ex.stack);
-	}
+	log.log(ex.stack);
 }
 finally {
-	if(log.isInitialized()){
-		log.log("=== stockheimer-deployer done ===");
-	}
-	else //atleast console log it
-	{
-		console.log("=== stockheimer-deployer done ===");
-	}	
+	log.log("=== stockheimer-deployer done ===");
 }
+
+
+
+function copyStagingToDeploy() {
+	log.log('--- copyStagingToDeploy started ---');
+
+	log.log('--- copyStagingToDeploy done ---');
+}
+
+function runNpmInstall() {
+	log.log('--- runNpmInstall started ---');
+
+	var npmout = process.execSync('npm install',
+	{
+		cwd: config.dir_deploy
+	});
+
+	log.log('npm stdout: ' + npmout);
+	log.log('--- runNpmInstall done ---');
+}
+
+function modifyClientFiles() {
+	log.log('--- modifyClientFiles started ---');
+
+	log.log('--- modifyClientFiles done ---');
+}
+
+function createBundles() {
+	log.log('--- createBundles started ---');
+
+	log.log('--- createBundles done ---');
+}
+
+function createHashNumber() {
+	log.log('--- createHashNumber started ---');
+
+	log.log('--- createHashNumber done ---');
+}
+
+function renameBundlesWithHash() {
+	log.log('--- renameBundlesWithHash started ---');
+
+	log.log('--- renameBundlesWithHash done ---');
+}
+
+function modifyIndexHtml() {
+	log.log('--- modifyIndexHtml started ---');
+
+	log.log('--- modifyIndexHtml done ---');
+}
+

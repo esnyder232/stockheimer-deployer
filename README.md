@@ -25,5 +25,4 @@ This also serves as documentation for deploys to a degree.
 7) In deploy directory, modify index.html to include the bundles with the hashes (cache busting)
 
 
-The intended usage of this is to run "npm run all".
-Each script can also be ran individually for debugging by running "npm
+The intended usage of this is to run "node index.js".

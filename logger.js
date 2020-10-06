@@ -53,7 +53,11 @@ class Logger {
 		var finalmsg = timestamp + " - " + msg + "\n";
 		
 		console.log(finalmsg);
-		fs.appendFileSync(logFileFullPath, finalmsg);
+
+		if(isInitialized)
+		{
+			fs.appendFileSync(logFileFullPath, finalmsg);
+		}
 	}
 
 	//ew.... Oh well.
