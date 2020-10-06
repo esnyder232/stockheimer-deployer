@@ -1,8 +1,12 @@
-# config
+# config files
 config.js
+client-config.json
+server-config.json
 
 #logs
 logs/
 
 #node
 node_modules/
+
+

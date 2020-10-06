@@ -1,24 +1,27 @@
 const process = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const moment = require('moment');
 const {config} = require('./config.js');
 const {Logger} = require('./logger.js');
 
+//create deploy version
+this.dt = new moment();
+var version = this.dt.format("YYYY-MM-DD_HH-mm-ss");
 
 //create log
-var log = new Logger();
+var log = new Logger(version);
 
 function deployStockheimer(){
 	try {
 		log.log("=== stockheimer-deployer start ===");
-	
+		log.log("Deploy version is: " + version);
 		copyStagingToDeploy();
 		runNpmInstall();
-		modifyClientFiles();
+		overriteConfigValues();
 		createBundles();
-		createHashNumber();
-		renameBundlesWithHash();
-		modifyIndexHtml();
+		// renameBundlesWithVersion();
+		// modifyIndexHtml();
 	
 	}
 	catch(ex) {
@@ -67,13 +70,6 @@ function copyStagingToDeploy() {
 		}
 	}
 
-	log.log(files)
-
-	var src = path.join(config.dir_staging, "LICENSE");
-	var target = config.dir_deploy;
-	log.log(src);
-	log.log(target);
-	//copyFolderRecursiveSync(src, target);
 	log.log('--- copyStagingToDeploy done ---');
 }
 
@@ -89,28 +85,45 @@ function runNpmInstall() {
 	log.log('--- runNpmInstall done ---');
 }
 
-function modifyClientFiles() {
-	log.log('--- modifyClientFiles started ---');
+function overriteConfigValues() {
+	log.log('--- overriteConfigValues started ---');
 
-	log.log('--- modifyClientFiles done ---');
+	var truthClientConfig = JSON.parse(fs.readFileSync("./client-config.json"));
+	var stockheimerClientConfig = JSON.parse(fs.readFileSync(path.join(config.dir_deploy, "client/client-config.json")));
+
+	var truthServerConfig = JSON.parse(fs.readFileSync("./server-config.json"));
+	var stockheimerServerConfig = JSON.parse(fs.readFileSync(path.join(config.dir_deploy, "server/server-config.json")));
+	
+	var finalClientJson = myJsonMerge(truthClientConfig, stockheimerClientConfig);
+	var finalServerJson = myJsonMerge(truthServerConfig, stockheimerServerConfig);
+
+	//put the new version in them as well
+	finalClientJson.version = version;
+	finalServerJson.version = version;
+
+	//finally, write the configs to deploy
+	fs.writeFileSync(path.join(config.dir_deploy, "client/client-config.json"), JSON.stringify(finalClientJson));
+	fs.writeFileSync(path.join(config.dir_deploy, "server/server-config.json"), JSON.stringify(finalServerJson));
+	log.log('--- overriteConfigValues done ---');
 }
 
 function createBundles() {
 	log.log('--- createBundles started ---');
 
+	var npmout = process.execSync('npm run build-prod',
+	{
+		cwd: config.dir_deploy
+	});
+
+	log.log('npm stdout: ' + npmout);
 	log.log('--- createBundles done ---');
 }
 
-function createHashNumber() {
-	log.log('--- createHashNumber started ---');
 
-	log.log('--- createHashNumber done ---');
-}
+function renameBundlesWithVersion() {
+	log.log('--- renameBundlesWithVersion started ---');
 
-function renameBundlesWithHash() {
-	log.log('--- renameBundlesWithHash started ---');
-
-	log.log('--- renameBundlesWithHash done ---');
+	log.log('--- renameBundlesWithVersion done ---');
 }
 
 function modifyIndexHtml() {
@@ -118,6 +131,20 @@ function modifyIndexHtml() {
 
 	log.log('--- modifyIndexHtml done ---');
 }
+
+//returns the otherJson with the values overwritten by the sourceOfTruthJson
+function myJsonMerge(sourceOfTruthJson, otherJson) {
+	var finalJson = JSON.parse(JSON.stringify(otherJson));
+	for(var key in sourceOfTruthJson)
+	{
+		if(finalJson[key] !== undefined)
+		{
+			finalJson[key] = sourceOfTruthJson[key];
+		}
+	}
+	return finalJson;
+}
+
 
 //something i ordered off the internet
 function copyFileSync( source, target ) {

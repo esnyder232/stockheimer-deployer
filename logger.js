@@ -1,50 +1,34 @@
 const path = require('path');
 const fs = require('fs');
 const {config} = require('./config.js');
-const moment = require('moment');
 
-var isInitialized = false;
-var logFileFullPath = "";
-var logFileName = "";
-var logFileDir = "";
-//This creates a log file and logs stuff to it. It is intended to be a global singleton.
+//This creates a log file and logs stuff to it.
 //The log file location is driven by config.js (config.dir_logs)
+//The deploy version in the constructor is the deploy version made in index.js.
 //
 //Usage:
 // const {Logger} = require('./logger.js);
-// var log = new Logger();
-// log.init();
+// var log = new Logger(version);
 // log.log('hello');
 // --log should be created at config.dir_logs
 //
 class Logger {
 	//initializes the logger.
-	constructor() {
-		if(!isInitialized)
-		{
-			//read where the log files should go
-			logFileDir = config.dir_logs;
+	constructor(version) {
+		
+		//read where the log files should go
+		this.logFileDir = config.dir_logs;
 
-			//create logfile name
-			this.dt = new moment();
-			logFileName = "stockheimer_deploy_log__" + this.dt.format("YYYY-MM-DD_HH-mm-ss");
+		//create logfile name
+		this.logFileName = "stockheimer_deploy_log__" + version;
 
-			//create full path
-			logFileFullPath = path.join(logFileDir, logFileName + ".txt");
+		//create full path
+		this.logFileFullPath = path.join(this.logFileDir, this.logFileName + ".txt");
 
-			//create log file
-			console.log('Creating log file...');
-			fs.writeFileSync(logFileFullPath, "");
-			console.log('Done. Log created at: %s', logFileFullPath);
-
-			//set isInitialized to true
-			isInitialized = true;
-
-			this.logFileDir = logFileDir;
-			this.logFileFullPath = logFileFullPath;
-			this.logFileName = logFileName;
-		}
-		return isInitialized;
+		//create log file
+		console.log('Creating log file...');
+		fs.writeFileSync(this.logFileFullPath, "");
+		console.log('Done. Log created at: %s', this.logFileFullPath);
 	}
 
 	log(msg) {
@@ -54,15 +38,7 @@ class Logger {
 		
 		console.log(finalmsg);
 
-		if(isInitialized)
-		{
-			fs.appendFileSync(logFileFullPath, finalmsg);
-		}
-	}
-
-	//ew.... Oh well.
-	isInitialized() {
-		return isInitialized;
+		fs.appendFileSync(this.logFileFullPath, finalmsg);
 	}
 };
 
