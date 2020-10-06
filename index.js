@@ -8,6 +8,7 @@ const {Logger} = require('./logger.js');
 //create deploy version
 this.dt = new moment();
 var version = this.dt.format("YYYY-MM-DD_HH-mm-ss");
+var bundleFiles = []; //used when modifying index.html
 
 //create log
 var log = new Logger(version);
@@ -16,12 +17,13 @@ function deployStockheimer(){
 	try {
 		log.log("=== stockheimer-deployer start ===");
 		log.log("Deploy version is: " + version);
+
 		copyStagingToDeploy();
 		runNpmInstall();
 		overriteConfigValues();
 		createBundles();
-		// renameBundlesWithVersion();
-		// modifyIndexHtml();
+		renameBundlesWithVersion();
+		modifyIndexHtml();
 	
 	}
 	catch(ex) {
@@ -122,6 +124,29 @@ function createBundles() {
 
 function renameBundlesWithVersion() {
 	log.log('--- renameBundlesWithVersion started ---');
+	
+	var files = fs.readdirSync(path.join(config.dir_deploy, "client-dist"));
+	var filesArr = [];
+	files.forEach( (file) => {
+		filesArr.push(file);
+	});
+
+	for(var i = 0; i < files.length; i++)
+	{
+		var oldName = files[i];
+		var oldNameSplit = oldName.split("bundle");
+		var newName = oldNameSplit[0] + "bundle." + version + oldNameSplit[1];
+
+		var oldNameFullPath = path.join(config.dir_deploy, "client-dist", oldName);
+		var newNameFullPath = path.join(config.dir_deploy, "client-dist", newName);
+		fs.renameSync(oldNameFullPath, newNameFullPath);
+
+		//if this bundle is not a "map", then add it to bundleFiles so we can use it in later steps
+		if(newName.indexOf("map") < 0)
+		{
+			bundleFiles.push(newName);
+		}
+	}
 
 	log.log('--- renameBundlesWithVersion done ---');
 }
@@ -129,6 +154,35 @@ function renameBundlesWithVersion() {
 function modifyIndexHtml() {
 	log.log('--- modifyIndexHtml started ---');
 
+	var indexFile = fs.readFileSync(path.join(config.dir_deploy, "index.html"), "utf8");
+	
+	//find the bundle tags in index.html, and split the html file into different parts
+	var regexStart = /<!--.*#BUNDLES_START#.*-->/;
+	var regexEnd = /<!--.*#BUNDLES_END#.*-->/;
+
+	var startBundles = regexStart.exec(indexFile);
+	var stopBundles = regexEnd.exec(indexFile);
+
+	var newIndexFirstPart = indexFile.substring(0, startBundles.index);	
+	var newIndexLastPart = indexFile.substring(stopBundles.index + stopBundles[0].length, indexFile.length);
+
+	//calculate bundle scripts to put into index.html
+	var newIndexBundlePart = "";
+	var scriptTemplate = '<script src="client-dist/#BUNDLE#"></script>';
+	var scriptTagsArr = [];
+	for(var i = 0; i < bundleFiles.length; i++)
+	{
+		var newScriptTag = scriptTemplate.replace("#BUNDLE#", bundleFiles[i]);
+		scriptTagsArr.push(newScriptTag);
+	}
+
+	newIndexBundlePart = scriptTagsArr.join("\n");
+
+	//finally reassemble the new index.html tags
+	var finalNewIndex = newIndexFirstPart + newIndexBundlePart + newIndexLastPart;
+
+	//write to index.html with bundle script tags
+	fs.writeFileSync(path.join(config.dir_deploy, "index.html"), finalNewIndex);
 	log.log('--- modifyIndexHtml done ---');
 }
 
