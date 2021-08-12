@@ -13,6 +13,13 @@ var bundleFiles = []; //used when modifying index.html
 //create log
 var log = new Logger(version);
 
+
+
+
+////////////////////
+// Main Functions //
+////////////////////
+
 function deployStockheimer(){
 	try {
 		log.log("=== stockheimer-deployer start ===");
@@ -24,7 +31,7 @@ function deployStockheimer(){
 		createBundles();
 		renameBundlesWithVersion();
 		modifyIndexHtml();
-	
+		copyServerDataToDeployData();
 	}
 	catch(ex) {
 		log.log(ex.stack);
@@ -186,6 +193,52 @@ function modifyIndexHtml() {
 	log.log('--- modifyIndexHtml done ---');
 }
 
+
+function copyServerDataToDeployData() {
+	log.log('--- copyServerDataToDeployData started ---');
+
+	//blacklist of files to not copy over to the deploy directory
+	var fileBlacklist = [
+	];
+
+	var files = fs.readdirSync(config.dir_server_data);
+	var filesArr = [];
+	files.forEach( (file) => {
+		filesArr.push(file);
+	});
+
+	for(var i = 0; i < filesArr.length; i++)
+	{
+		//check if the name is in the blacklist
+		var currentFile = filesArr[i]
+		var blacklistIndex = fileBlacklist.findIndex((x) => {return currentFile.toLowerCase() == x.toLowerCase()});
+		if(blacklistIndex >= 0)
+		{
+			//intentionally blank
+		}
+		else
+		{
+			var curSource = path.join( config.dir_server_data, currentFile );
+			if ( fs.lstatSync( curSource ).isDirectory() ) {
+				copyFolderRecursiveSync( curSource, config.dir_deploy );
+			} else {
+				copyFileSync( curSource, config.dir_deploy );
+			}
+		}
+	}
+
+	log.log('--- copyServerDataToDeployData done ---');
+}
+
+
+
+
+
+
+//////////////////////
+// Helper functions //
+//////////////////////
+
 //returns the otherJson with the values overwritten by the sourceOfTruthJson
 function myJsonMerge(sourceOfTruthJson, otherJson) {
 	var finalJson = JSON.parse(JSON.stringify(otherJson));
@@ -238,5 +291,6 @@ function copyFolderRecursiveSync( source, target ) {
         } );
     }
 }
+
 
 deployStockheimer();
