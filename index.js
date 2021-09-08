@@ -28,6 +28,7 @@ function deployStockheimer(){
 		copyStagingToDeploy();
 		runNpmInstall();
 		overriteConfigValues();
+		clearClientDist();
 		createBundles();
 		renameBundlesWithVersion();
 		modifyIndexHtml();
@@ -114,6 +115,17 @@ function overriteConfigValues() {
 	fs.writeFileSync(path.join(config.dir_deploy, "client/client-config.json"), JSON.stringify(finalClientJson));
 	fs.writeFileSync(path.join(config.dir_deploy, "server/server-config.json"), JSON.stringify(finalServerJson));
 	log.log('--- overriteConfigValues done ---');
+}
+
+function clearClientDist() {
+	log.log('--- clearClientDist started ---');
+	
+	var files = fs.readdirSync(path.join(config.dir_deploy, "client-dist"));
+	files.forEach( (file) => {
+		fs.unlinkSync(file);
+	});
+
+	log.log('--- clearClientDist done ---');
 }
 
 function createBundles() {
