@@ -122,7 +122,7 @@ function clearClientDist() {
 	
 	var files = fs.readdirSync(path.join(config.dir_deploy, "client-dist"));
 	files.forEach( (file) => {
-		fs.unlinkSync(file);
+		fs.unlinkSync(path.join(config.dir_deploy, "client-dist", file));
 	});
 
 	log.log('--- clearClientDist done ---');
